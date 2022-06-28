@@ -7,7 +7,7 @@ import os.path as osp
 from scipy.sparse import linalg
 import time
 import logging
-
+import sys
 
 class DataLoader(object):
     def __init__(self, xs, ys, batch_size, pad_with_last_sample=True):

@@ -10,10 +10,8 @@ import os.path as osp
 parser = argparse.ArgumentParser()
 parser.add_argument('--device',type=str,default='cuda:0',help='')
 ################ Path to data ################
-parser.add_argument('--data',type=str,default='./data/district3F11T17/FastData/',help='data path')
-parser.add_argument('--adjdata',type=str,default='./data/district3F11T17/graph/',help='adj data path')
-# parser.add_argument('--data',type=str,default='D:/Python Project/Graph-WaveNet/data/METR-LA',help='data path')
-# parser.add_argument('--adjdata',type=str,default='D:/Python Project/Graph-WaveNet/data/sensor_graph/adj_mx.pkl',help='adj data path')
+parser.add_argument('--data',type=str,default='/data/cs.aau.dk/tungkvt/Trafficstream/district3F11T17/FastData/',help='data path')
+parser.add_argument('--adjdata',type=str,default='/data/cs.aau.dk/tungkvt/Trafficstream/district3F11T17/graph/',help='adj data path')
 ################              ################
 parser.add_argument('--adjtype',type=str,default='doubletransition',help='adj type')
 parser.add_argument('--gcn_bool',action='store_true',help='whether to add graph convolution layer')
@@ -24,19 +22,21 @@ parser.add_argument('--seq_length',type=int,default=12,help='')
 parser.add_argument('--nhid',type=int,default=32,help='')
 parser.add_argument('--in_dim',type=int,default=1,help='inputs dimension')
 parser.add_argument('--num_nodes',type=int,default=655,help='number of nodes')
-parser.add_argument('--batch_size',type=int,default=4,help='batch size')
+parser.add_argument('--batch_size',type=int,default=32,help='batch size')
 parser.add_argument('--learning_rate',type=float,default=0.01,help='learning rate')
 parser.add_argument('--dropout',type=float,default=0.3,help='dropout rate')
 parser.add_argument('--weight_decay',type=float,default=0.0001,help='weight decay rate')
 parser.add_argument('--epochs',type=int,default=1,help='')
 parser.add_argument('--print_every',type=int,default=50,help='')
 #parser.add_argument('--seed',type=int,default=99,help='random seed')
-parser.add_argument('--save',type=str,default='./garage/metr',help='save path')
+parser.add_argument('--save',type=str,default='/data/cs.aau.dk/tungkvt/Trafficstream/result/graph-wavenet',help='save path')
 parser.add_argument('--expid',type=int,default=1,help='experiment id')
 parser.add_argument('--begin_year',type=int,default=2011,help='begin year')
-parser.add_argument('--end_year',type=int,default=2011,help='end year')
+parser.add_argument('--end_year',type=int,default=2013,help='end year')
 
 args = parser.parse_args()
+
+logger = util.init_log()
 
 
 
@@ -61,8 +61,9 @@ def main():
         # dataloader = util.load_dataset(args.data, args.batch_size, args.batch_size, args.batch_size)  
         
         supports = [torch.tensor(i).to(device) for i in adj_mx]
+        vars(args)['num_nodes'] = supports[0].shape[0]
 
-        print(args)
+        logger.info(args)
 
         if args.randomadj:
             adjinit = None
@@ -79,7 +80,7 @@ def main():
                             adjinit)
 
 
-        print("start training...",flush=True)
+        logger.info("start training year {}".format(year))
         his_loss =[]
         val_time = []
         train_time = []
@@ -106,7 +107,8 @@ def main():
                 train_rmse.append(metrics[2])
                 if iter % args.print_every == 0 :
                     log = 'Iter: {:03d}, Train Loss: {:.4f}, Train MAPE: {:.4f}, Train RMSE: {:.4f}'
-                    print(log.format(iter, train_loss[-1], train_mape[-1], train_rmse[-1]),flush=True)
+                    logger.info(log.format(iter, train_loss[-1], train_mape[-1], train_rmse[-1]))
+
             t2 = time.time()
             train_time.append(t2-t1)
             #validation
@@ -127,7 +129,7 @@ def main():
                 valid_rmse.append(metrics[2])
             s2 = time.time()
             log = 'Epoch: {:03d}, Inference Time: {:.4f} secs'
-            print(log.format(i,(s2-s1)))
+            logger.info(log.format(i,(s2-s1)))
             val_time.append(s2-s1)
             mtrain_loss = np.mean(train_loss)
             mtrain_mape = np.mean(train_mape)
@@ -139,10 +141,10 @@ def main():
             his_loss.append(mvalid_loss)
 
             log = 'Epoch: {:03d}, Train Loss: {:.4f}, Train MAPE: {:.4f}, Train RMSE: {:.4f}, Valid Loss: {:.4f}, Valid MAPE: {:.4f}, Valid RMSE: {:.4f}, Training Time: {:.4f}/epoch'
-            print(log.format(i, mtrain_loss, mtrain_mape, mtrain_rmse, mvalid_loss, mvalid_mape, mvalid_rmse, (t2 - t1)),flush=True)
+            logger.info(log.format(i, mtrain_loss, mtrain_mape, mtrain_rmse, mvalid_loss, mvalid_mape, mvalid_rmse, (t2 - t1)))
             torch.save(engine.model.state_dict(), args.save+"_epoch_"+str(i)+"_"+str(round(mvalid_loss,2))+".pth")
-        print("Average Training Time: {:.4f} secs/epoch".format(np.mean(train_time)))
-        print("Average Inference Time: {:.4f} secs".format(np.mean(val_time)))
+        logger.info("Average Training Time: {:.4f} secs/epoch".format(np.mean(train_time)))
+        logger.info("Average Inference Time: {:.4f} secs".format(np.mean(val_time)))
 
         #testing
         bestid = np.argmin(his_loss)
@@ -164,26 +166,26 @@ def main():
         yhat = yhat[:realy.size(0),...]
 
 
-        print("Training finished")
-        print("The valid loss on best model is", str(round(his_loss[bestid],4)))
+        logger.info("Training finished")
+        logger.info("The valid loss on best model is {}".format(str(round(his_loss[bestid],4))))
 
 
         amae = []
         amape = []
         armse = []
-        for i in range(12):
+        for i in [3,6,12]:
             # pred = scaler.inverse_transform(yhat[:,:,i])
             pred = yhat[:,:,i]
             real = realy[:,:,i]
             metrics = util.metric(pred,real)
             log = 'Evaluate best model on test data for horizon {:d}, Test MAE: {:.4f}, Test MAPE: {:.4f}, Test RMSE: {:.4f}'
-            print(log.format(i+1, metrics[0], metrics[1], metrics[2]))
+            logger.info(log.format(i+1, metrics[0], metrics[1], metrics[2]))
             amae.append(metrics[0])
             amape.append(metrics[1])
             armse.append(metrics[2])
 
         log = 'On average over 12 horizons, Test MAE: {:.4f}, Test MAPE: {:.4f}, Test RMSE: {:.4f}'
-        print(log.format(np.mean(amae),np.mean(amape),np.mean(armse)))
+        logger.info(log.format(np.mean(amae),np.mean(amape),np.mean(armse)))
         torch.save(engine.model.state_dict(), args.save+"_exp"+str(args.expid)+"_best_"+str(round(his_loss[bestid],2))+".pth")
 
 
