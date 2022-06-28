@@ -48,9 +48,9 @@ def main():
 
 
         adj_path = osp.join(args.adjdata, year, str(year)+"_adj.npz")
-        data_path = osp.join(args.data, year, str(year)+"_30day.npz")
+        # data_path = osp.join(args.data, year, str(year)+"_30day.npz")
         adj_mx = util.load_adj(adj_path,args.adjtype)
-        dataloader = util.load_dataset(data_path, args.batch_size, args.batch_size, args.batch_size)
+        dataloader = util.load_dataset(year, args.data, args.batch_size, args.batch_size, args.batch_size)
         # scaler = dataloader['scaler']
         supports = [torch.tensor(i).to(device) for i in adj_mx]
 

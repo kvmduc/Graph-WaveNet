@@ -196,9 +196,9 @@ def load_dataset(year, dataset_dir, batch_size , valid_batch_size= None,  test_b
     # for category in ['train', 'val', 'test']:
         # data['x_' + category][..., 0] = scaler.transform(data['x_' + category][..., 0])
         # data['y_' + category][..., 0] = scaler.transform(data['y_' + category][..., 0])
-    data['train_loader'] = DataLoader(data['x_train'], data['y_train'], batch_size, shuffle=True)
-    data['val_loader'] = DataLoader(data['x_val'], data['y_val'], valid_batch_size, shuffle=False)
-    data['test_loader'] = DataLoader(data['x_test'], data['y_test'], test_batch_size, shuffle=False)
+    data['train_loader'] = DataLoader(data['x_train'], data['y_train'], batch_size)
+    data['val_loader'] = DataLoader(data['x_val'], data['y_val'], valid_batch_size)
+    data['test_loader'] = DataLoader(data['x_test'], data['y_test'], test_batch_size)
     # data['scaler'] = scaler
     return data
 
