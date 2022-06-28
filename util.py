@@ -124,28 +124,8 @@ def load_pickle(pickle_file):
         raise
     return pickle_data
 
-def load_adj(pkl_filename, adjtype):
-    sensor_ids, sensor_id_to_ind, adj_mx = load_pickle(pkl_filename)
-    if adjtype == "scalap":
-        adj = [calculate_scaled_laplacian(adj_mx)]
-    elif adjtype == "normlap":
-        adj = [calculate_normalized_laplacian(adj_mx).astype(np.float32).todense()]
-    elif adjtype == "symnadj":
-        adj = [sym_adj(adj_mx)]
-    elif adjtype == "transition":
-        adj = [asym_adj(adj_mx)]
-    elif adjtype == "doubletransition":
-        adj = [asym_adj(adj_mx), asym_adj(np.transpose(adj_mx))]
-    elif adjtype == "identity":
-        adj = [np.diag(np.ones(adj_mx.shape[0])).astype(np.float32)]
-    else:
-        error = 0
-        assert error, "adj type not defined"
-    return sensor_ids, sensor_id_to_ind, adj
-
-
-# def load_adj(file_name, adjtype):
-#     adj_mx = np.load(file_name)['x']
+# def load_adj(pkl_filename, adjtype):
+#     sensor_ids, sensor_id_to_ind, adj_mx = load_pickle(pkl_filename)
 #     if adjtype == "scalap":
 #         adj = [calculate_scaled_laplacian(adj_mx)]
 #     elif adjtype == "normlap":
@@ -161,47 +141,67 @@ def load_adj(pkl_filename, adjtype):
 #     else:
 #         error = 0
 #         assert error, "adj type not defined"
-#     return adj
+#     return sensor_ids, sensor_id_to_ind, adj
+
+
+def load_adj(file_name, adjtype):
+    adj_mx = np.load(file_name)['x']
+    if adjtype == "scalap":
+        adj = [calculate_scaled_laplacian(adj_mx)]
+    elif adjtype == "normlap":
+        adj = [calculate_normalized_laplacian(adj_mx).astype(np.float32).todense()]
+    elif adjtype == "symnadj":
+        adj = [sym_adj(adj_mx)]
+    elif adjtype == "transition":
+        adj = [asym_adj(adj_mx)]
+    elif adjtype == "doubletransition":
+        adj = [asym_adj(adj_mx), asym_adj(np.transpose(adj_mx))]
+    elif adjtype == "identity":
+        adj = [np.diag(np.ones(adj_mx.shape[0])).astype(np.float32)]
+    else:
+        error = 0
+        assert error, "adj type not defined"
+    return adj
 
 
 
-def load_dataset(dataset_dir, batch_size, valid_batch_size= None, test_batch_size=None):
-    data = {}
-    for category in ['train', 'val', 'test']:
-        cat_data = np.load(os.path.join(dataset_dir, category + '.npz'))
-        data['x_' + category] = cat_data['x']
-        data['y_' + category] = cat_data['y']
-    scaler = StandardScaler(mean=data['x_train'][..., 0].mean(), std=data['x_train'][..., 0].std())
-    # Data format
-    for category in ['train', 'val', 'test']:
-        data['x_' + category][..., 0] = scaler.transform(data['x_' + category][..., 0])
-    data['train_loader'] = DataLoader(data['x_train'], data['y_train'], batch_size)
-    data['val_loader'] = DataLoader(data['x_val'], data['y_val'], valid_batch_size)
-    data['test_loader'] = DataLoader(data['x_test'], data['y_test'], test_batch_size)
-    data['scaler'] = scaler
-    return data
-
-
-# def load_dataset(year, dataset_dir, batch_size , valid_batch_size= None,  test_batch_size=None, **kwargs):
+# def load_dataset(dataset_dir, batch_size, valid_batch_size= None, test_batch_size=None):
 #     data = {}
 #     for category in ['train', 'val', 'test']:
-#         # cat_data = np.load(os.path.join(dataset_dir, category + '.npz'))
-#         cat_data = np.load(osp.join(dataset_dir, str(year)+"_30day.npz"), allow_pickle=True)
-#         data['x_' + category] = cat_data[category + '_x']
-#         data['y_' + category] = cat_data[category + '_y']
-#         data['x_' + category] = np.expand_dims(data['x_' + category], axis = -1)
-#         data['y_' + category] = np.expand_dims(data['y_' + category], axis = -1)
-    
-#     # scaler = StandardScaler(mean=tf.reduce_mean(data['x_train'][..., 0]), std=tf.reduce_mean(data['x_train'][..., 0]))
+#         cat_data = np.load(os.path.join(dataset_dir, category + '.npz'))
+#         data['x_' + category] = cat_data['x']
+#         data['y_' + category] = cat_data['y']
+#     scaler = StandardScaler(mean=data['x_train'][..., 0].mean(), std=data['x_train'][..., 0].std())
 #     # Data format
-#     # for category in ['train', 'val', 'test']:
-#         # data['x_' + category][..., 0] = scaler.transform(data['x_' + category][..., 0])
-#         # data['y_' + category][..., 0] = scaler.transform(data['y_' + category][..., 0])
+#     for category in ['train', 'val', 'test']:
+#         data['x_' + category][..., 0] = scaler.transform(data['x_' + category][..., 0])
 #     data['train_loader'] = DataLoader(data['x_train'], data['y_train'], batch_size)
 #     data['val_loader'] = DataLoader(data['x_val'], data['y_val'], valid_batch_size)
 #     data['test_loader'] = DataLoader(data['x_test'], data['y_test'], test_batch_size)
-#     # data['scaler'] = scaler
+#     data['scaler'] = scaler
 #     return data
+
+
+def load_dataset(year, dataset_dir, batch_size , valid_batch_size= None,  test_batch_size=None, **kwargs):
+    data = {}
+    for category in ['train', 'val', 'test']:
+        # cat_data = np.load(os.path.join(dataset_dir, category + '.npz'))
+        cat_data = np.load(osp.join(dataset_dir, str(year)+"_30day.npz"), allow_pickle=True)
+        data['x_' + category] = cat_data[category + '_x']
+        data['y_' + category] = cat_data[category + '_y']
+        data['x_' + category] = np.expand_dims(data['x_' + category], axis = -1)
+        data['y_' + category] = np.expand_dims(data['y_' + category], axis = -1)
+    
+    # scaler = StandardScaler(mean=tf.reduce_mean(data['x_train'][..., 0]), std=tf.reduce_mean(data['x_train'][..., 0]))
+    # Data format
+    # for category in ['train', 'val', 'test']:
+        # data['x_' + category][..., 0] = scaler.transform(data['x_' + category][..., 0])
+        # data['y_' + category][..., 0] = scaler.transform(data['y_' + category][..., 0])
+    data['train_loader'] = DataLoader(data['x_train'], data['y_train'], batch_size)
+    data['val_loader'] = DataLoader(data['x_val'], data['y_val'], valid_batch_size)
+    data['test_loader'] = DataLoader(data['x_test'], data['y_test'], test_batch_size)
+    # data['scaler'] = scaler
+    return data
 
 
 def masked_mse(preds, labels, null_val=np.nan):

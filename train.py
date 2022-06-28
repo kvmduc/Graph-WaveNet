@@ -8,12 +8,12 @@ from engine import trainer
 import os.path as osp
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--device',type=str,default='cpu',help='')
+parser.add_argument('--device',type=str,default='cuda:0',help='')
 ################ Path to data ################
-# parser.add_argument('--data',type=str,default='./data/district3F11T17/FastData/',help='data path')
-# parser.add_argument('--adjdata',type=str,default='./data/district3F11T17/graph/',help='adj data path')
-parser.add_argument('--data',type=str,default='D:/Python Project/Graph-WaveNet/data/METR-LA',help='data path')
-parser.add_argument('--adjdata',type=str,default='D:/Python Project/Graph-WaveNet/data/sensor_graph/adj_mx.pkl',help='adj data path')
+parser.add_argument('--data',type=str,default='./data/district3F11T17/FastData/',help='data path')
+parser.add_argument('--adjdata',type=str,default='./data/district3F11T17/graph/',help='adj data path')
+# parser.add_argument('--data',type=str,default='D:/Python Project/Graph-WaveNet/data/METR-LA',help='data path')
+# parser.add_argument('--adjdata',type=str,default='D:/Python Project/Graph-WaveNet/data/sensor_graph/adj_mx.pkl',help='adj data path')
 ################              ################
 parser.add_argument('--adjtype',type=str,default='doubletransition',help='adj type')
 parser.add_argument('--gcn_bool',action='store_true',help='whether to add graph convolution layer')
@@ -22,8 +22,8 @@ parser.add_argument('--addaptadj',action='store_true',help='whether add adaptive
 parser.add_argument('--randomadj',action='store_true',help='whether random initialize adaptive adj')
 parser.add_argument('--seq_length',type=int,default=12,help='')
 parser.add_argument('--nhid',type=int,default=32,help='')
-parser.add_argument('--in_dim',type=int,default=2,help='inputs dimension')
-parser.add_argument('--num_nodes',type=int,default=207,help='number of nodes')
+parser.add_argument('--in_dim',type=int,default=1,help='inputs dimension')
+parser.add_argument('--num_nodes',type=int,default=655,help='number of nodes')
 parser.add_argument('--batch_size',type=int,default=4,help='batch size')
 parser.add_argument('--learning_rate',type=float,default=0.01,help='learning rate')
 parser.add_argument('--dropout',type=float,default=0.3,help='dropout rate')
@@ -34,7 +34,7 @@ parser.add_argument('--print_every',type=int,default=50,help='')
 parser.add_argument('--save',type=str,default='./garage/metr',help='save path')
 parser.add_argument('--expid',type=int,default=1,help='experiment id')
 parser.add_argument('--begin_year',type=int,default=2011,help='begin year')
-parser.add_argument('--end_year',type=int,default=2017,help='end year')
+parser.add_argument('--end_year',type=int,default=2011,help='end year')
 
 args = parser.parse_args()
 
@@ -49,16 +49,16 @@ def main():
     for year in range (args.begin_year, args.end_year + 1):
 
 
-        # adj_path = osp.join(args.adjdata, str(year)+"_adj.npz")
+        adj_path = osp.join(args.adjdata, str(year)+"_adj.npz")
         # # data_path = osp.join(args.data, year, str(year)+"_30day.npz")
-        # adj_mx = util.load_adj(adj_path,args.adjtype)
-        # dataloader = util.load_dataset(year, args.data, args.batch_size, args.batch_size, args.batch_size)
+        adj_mx = util.load_adj(adj_path,args.adjtype)
+        dataloader = util.load_dataset(year, args.data, args.batch_size, args.batch_size, args.batch_size)
 
         
         # scaler = dataloader['scaler']
         ############################################### TEST OLD DATA ###############################################
-        sensor_ids, sensor_id_to_ind, adj_mx = util.load_adj(str(args.adjdata),args.adjtype)
-        dataloader = util.load_dataset(args.data, args.batch_size, args.batch_size, args.batch_size)  
+        # sensor_ids, sensor_id_to_ind, adj_mx = util.load_adj(str(args.adjdata),args.adjtype)
+        # dataloader = util.load_dataset(args.data, args.batch_size, args.batch_size, args.batch_size)  
         
         supports = [torch.tensor(i).to(device) for i in adj_mx]
 

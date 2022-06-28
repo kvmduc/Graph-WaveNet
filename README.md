@@ -12,7 +12,7 @@ This is the original pytorch implementation of Graph WaveNet in the following pa
 ## Requirements
 - python 3
 - see `requirements.txt`
-
+- Must run with torch 1.10.1
 
 ## Data Preparation
 
