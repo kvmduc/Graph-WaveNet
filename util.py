@@ -3,7 +3,9 @@ import numpy as np
 import os
 import scipy.sparse as sp
 import torch
+import os.path as osp
 from scipy.sparse import linalg
+import time
 
 
 class DataLoader(object):
@@ -141,21 +143,44 @@ def load_adj(pkl_filename, adjtype):
     return sensor_ids, sensor_id_to_ind, adj
 
 
-def load_dataset(dataset_dir, batch_size, valid_batch_size= None, test_batch_size=None):
+# def load_dataset(dataset_dir, batch_size, valid_batch_size= None, test_batch_size=None):
+#     data = {}
+#     for category in ['train', 'val', 'test']:
+#         cat_data = np.load(os.path.join(dataset_dir, category + '.npz'))
+#         data['x_' + category] = cat_data['x']
+#         data['y_' + category] = cat_data['y']
+#     scaler = StandardScaler(mean=data['x_train'][..., 0].mean(), std=data['x_train'][..., 0].std())
+#     # Data format
+#     for category in ['train', 'val', 'test']:
+#         data['x_' + category][..., 0] = scaler.transform(data['x_' + category][..., 0])
+#     data['train_loader'] = DataLoader(data['x_train'], data['y_train'], batch_size)
+#     data['val_loader'] = DataLoader(data['x_val'], data['y_val'], valid_batch_size)
+#     data['test_loader'] = DataLoader(data['x_test'], data['y_test'], test_batch_size)
+#     data['scaler'] = scaler
+#     return data
+
+
+def load_dataset(year, dataset_dir, batch_size , valid_batch_size= None,  test_batch_size=None, **kwargs):
     data = {}
     for category in ['train', 'val', 'test']:
-        cat_data = np.load(os.path.join(dataset_dir, category + '.npz'))
-        data['x_' + category] = cat_data['x']
-        data['y_' + category] = cat_data['y']
-    scaler = StandardScaler(mean=data['x_train'][..., 0].mean(), std=data['x_train'][..., 0].std())
+        # cat_data = np.load(os.path.join(dataset_dir, category + '.npz'))
+        cat_data = np.load(osp.join(dataset_dir, str(year)+"_30day.npz"), allow_pickle=True)
+        data['x_' + category] = cat_data[category + '_x']
+        data['y_' + category] = cat_data[category + '_y']
+        data['x_' + category] = np.expand_dims(data['x_' + category], axis = -1)
+        data['y_' + category] = np.expand_dims(data['y_' + category], axis = -1)
+    
+    # scaler = StandardScaler(mean=tf.reduce_mean(data['x_train'][..., 0]), std=tf.reduce_mean(data['x_train'][..., 0]))
     # Data format
-    for category in ['train', 'val', 'test']:
-        data['x_' + category][..., 0] = scaler.transform(data['x_' + category][..., 0])
-    data['train_loader'] = DataLoader(data['x_train'], data['y_train'], batch_size)
-    data['val_loader'] = DataLoader(data['x_val'], data['y_val'], valid_batch_size)
-    data['test_loader'] = DataLoader(data['x_test'], data['y_test'], test_batch_size)
-    data['scaler'] = scaler
+    # for category in ['train', 'val', 'test']:
+        # data['x_' + category][..., 0] = scaler.transform(data['x_' + category][..., 0])
+        # data['y_' + category][..., 0] = scaler.transform(data['y_' + category][..., 0])
+    data['train_loader'] = DataLoader(data['x_train'], data['y_train'], batch_size, shuffle=True)
+    data['val_loader'] = DataLoader(data['x_val'], data['y_val'], valid_batch_size, shuffle=False)
+    data['test_loader'] = DataLoader(data['x_test'], data['y_test'], test_batch_size, shuffle=False)
+    # data['scaler'] = scaler
     return data
+
 
 def masked_mse(preds, labels, null_val=np.nan):
     if np.isnan(null_val):
@@ -199,7 +224,7 @@ def masked_mape(preds, labels, null_val=np.nan):
     loss = torch.abs(preds-labels)/labels
     loss = loss * mask
     loss = torch.where(torch.isnan(loss), torch.zeros_like(loss), loss)
-    return torch.mean(loss)
+    return torch.mean(loss) * 100
 
 
 def metric(pred, real):
@@ -209,3 +234,24 @@ def metric(pred, real):
     return mae,mape,rmse
 
 
+def init_log():
+    log_dir = './log/'
+    log_filename = 'info_%s' % time.strftime('%m-%d-%H-%M-%S')
+    logger = logging.getLogger(__name__)
+
+    if not os.path.exists(log_dir):
+        os.makedirs(log_dir)
+
+    logger.setLevel(logging.INFO)
+    fh = logging.FileHandler(osp.join(log_dir, log_filename+".log"))
+    fh.setLevel(logging.INFO)
+    ch = logging.StreamHandler(sys.stdout)
+    ch.setLevel(logging.INFO)
+    formatter = logging.Formatter("%(asctime)s - %(message)s")
+    fh.setFormatter(formatter)
+    ch.setFormatter(formatter)
+    logger.addHandler(fh)
+    logger.addHandler(ch)
+    logger.info("logger name:%s", osp.join(log_dir, log_filename+".log"))
+    # vars(args)["logger"] = logger
+    return logger
