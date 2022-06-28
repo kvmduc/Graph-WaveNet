@@ -8,10 +8,12 @@ from engine import trainer
 import os.path as osp
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--device',type=str,default='cuda:0',help='')
+parser.add_argument('--device',type=str,default='cpu',help='')
 ################ Path to data ################
-parser.add_argument('--data',type=str,default='./data/district3F11T17/FastData/',help='data path')
-parser.add_argument('--adjdata',type=str,default='./data/district3F11T17/graph/',help='adj data path')
+# parser.add_argument('--data',type=str,default='./data/district3F11T17/FastData/',help='data path')
+# parser.add_argument('--adjdata',type=str,default='./data/district3F11T17/graph/',help='adj data path')
+parser.add_argument('--data',type=str,default='D:/Python Project/Graph-WaveNet/data/METR-LA',help='data path')
+parser.add_argument('--adjdata',type=str,default='D:/Python Project/Graph-WaveNet/data/sensor_graph/adj_mx.pkl',help='adj data path')
 ################              ################
 parser.add_argument('--adjtype',type=str,default='doubletransition',help='adj type')
 parser.add_argument('--gcn_bool',action='store_true',help='whether to add graph convolution layer')
@@ -20,13 +22,13 @@ parser.add_argument('--addaptadj',action='store_true',help='whether add adaptive
 parser.add_argument('--randomadj',action='store_true',help='whether random initialize adaptive adj')
 parser.add_argument('--seq_length',type=int,default=12,help='')
 parser.add_argument('--nhid',type=int,default=32,help='')
-parser.add_argument('--in_dim',type=int,default=1,help='inputs dimension')
+parser.add_argument('--in_dim',type=int,default=2,help='inputs dimension')
 parser.add_argument('--num_nodes',type=int,default=207,help='number of nodes')
-parser.add_argument('--batch_size',type=int,default=64,help='batch size')
+parser.add_argument('--batch_size',type=int,default=4,help='batch size')
 parser.add_argument('--learning_rate',type=float,default=0.01,help='learning rate')
 parser.add_argument('--dropout',type=float,default=0.3,help='dropout rate')
 parser.add_argument('--weight_decay',type=float,default=0.0001,help='weight decay rate')
-parser.add_argument('--epochs',type=int,default=100,help='')
+parser.add_argument('--epochs',type=int,default=1,help='')
 parser.add_argument('--print_every',type=int,default=50,help='')
 #parser.add_argument('--seed',type=int,default=99,help='random seed')
 parser.add_argument('--save',type=str,default='./garage/metr',help='save path')
@@ -47,11 +49,17 @@ def main():
     for year in range (args.begin_year, args.end_year + 1):
 
 
-        adj_path = osp.join(args.adjdata, year, str(year)+"_adj.npz")
-        # data_path = osp.join(args.data, year, str(year)+"_30day.npz")
-        adj_mx = util.load_adj(adj_path,args.adjtype)
-        dataloader = util.load_dataset(year, args.data, args.batch_size, args.batch_size, args.batch_size)
+        # adj_path = osp.join(args.adjdata, str(year)+"_adj.npz")
+        # # data_path = osp.join(args.data, year, str(year)+"_30day.npz")
+        # adj_mx = util.load_adj(adj_path,args.adjtype)
+        # dataloader = util.load_dataset(year, args.data, args.batch_size, args.batch_size, args.batch_size)
+
+        
         # scaler = dataloader['scaler']
+        ############################################### TEST OLD DATA ###############################################
+        sensor_ids, sensor_id_to_ind, adj_mx = util.load_adj(str(args.adjdata),args.adjtype)
+        dataloader = util.load_dataset(args.data, args.batch_size, args.batch_size, args.batch_size)  
+        
         supports = [torch.tensor(i).to(device) for i in adj_mx]
 
         print(args)
@@ -90,6 +98,8 @@ def main():
                 trainx= trainx.transpose(1, 3)
                 trainy = torch.Tensor(y).to(device)
                 trainy = trainy.transpose(1, 3)
+                # print(trainx.shape)             # (batchsize, F, N, len)
+                # print(trainy.shape)             # (batchsize, F, N, len)
                 metrics = engine.train(trainx, trainy[:,0,:,:])
                 train_loss.append(metrics[0])
                 train_mape.append(metrics[1])

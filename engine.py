@@ -14,6 +14,7 @@ class trainer():
         self.model.train()
         self.optimizer.zero_grad()
         input = nn.functional.pad(input,(1,0,0,0))
+        # print(input.shape)                (batch_size, F, N, seq + 1)
         output = self.model(input)
         output = output.transpose(1,3)
         #output = [batch_size,12,num_nodes,1]
