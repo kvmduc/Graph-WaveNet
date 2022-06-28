@@ -5,12 +5,13 @@ import time
 import util
 import matplotlib.pyplot as plt
 from engine import trainer
+import os.path as osp
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--device',type=str,default='cuda:0',help='')
 ################ Path to data ################
-parser.add_argument('--data',type=str,default='data/METR-LA',help='data path')
-parser.add_argument('--adjdata',type=str,default='data/sensor_graph/adj_mx.pkl',help='adj data path')
+parser.add_argument('--data',type=str,default='./data/district3F11T17/FastData/',help='data path')
+parser.add_argument('--adjdata',type=str,default='./data/district3F11T17/graph/',help='adj data path')
 ################              ################
 parser.add_argument('--adjtype',type=str,default='doubletransition',help='adj type')
 parser.add_argument('--gcn_bool',action='store_true',help='whether to add graph convolution layer')
@@ -44,8 +45,12 @@ def main():
     #load data
     device = torch.device(args.device)
     for year in range (args.begin_year, args.end_year + 1):
-        sensor_ids, sensor_id_to_ind, adj_mx = util.load_adj(args.adjdata,args.adjtype)
-        dataloader = util.load_dataset(args.data, args.batch_size, args.batch_size, args.batch_size)
+
+
+        adj_path = osp.join(args.adjdata, year, str(year)+"_adj.npz")
+        data_path = osp.join(args.data, year, str(year)+"_30day.npz")
+        adj_mx = util.load_adj(adj_path,args.adjtype)
+        dataloader = util.load_dataset(data_path, args.batch_size, args.batch_size, args.batch_size)
         # scaler = dataloader['scaler']
         supports = [torch.tensor(i).to(device) for i in adj_mx]
 
