@@ -29,7 +29,7 @@ parser.add_argument('--weight_decay',type=float,default=0.0001,help='weight deca
 parser.add_argument('--epochs',type=int,default=1,help='')
 parser.add_argument('--print_every',type=int,default=50,help='')
 #parser.add_argument('--seed',type=int,default=99,help='random seed')
-parser.add_argument('--save',type=str,default='/data/cs.aau.dk/tungkvt/Trafficstream/result/graph-wavenet',help='save path')
+parser.add_argument('--save',type=str,default='/data/cs.aau.dk/tungkvt/Trafficstream/result/graph-wavenet/',help='save path')
 parser.add_argument('--expid',type=int,default=1,help='experiment id')
 parser.add_argument('--begin_year',type=int,default=2011,help='begin year')
 parser.add_argument('--end_year',type=int,default=2013,help='end year')
@@ -173,7 +173,7 @@ def main():
         amae = []
         amape = []
         armse = []
-        for i in [3,6,12]:
+        for i in [2,5,11]:
             # pred = scaler.inverse_transform(yhat[:,:,i])
             pred = yhat[:,:,i]
             real = realy[:,:,i]
