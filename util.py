@@ -211,14 +211,13 @@ def load_masked_test_dataset(year, dataset_dir, test_batch_size=None, final_year
         data['x_' + category] = cat_data[category + '_x']
         data['y_' + category] = cat_data[category + '_y']
         data['x_' + category] = np.expand_dims(data['x_' + category], axis = -1)
-        data['y_' + category] = np.expand_dims(data['y_' + category], axis = -1)
-    
-    data['x_test'] = np.pad(data['x_test'], [(0,0), (0,final_year_num_nodes), (0,0), (0,0)], 'constant')
-    data['y_test'] = np.pad(data['y_test'], [(0,0), (0,final_year_num_nodes), (0,0), (0,0)], 'constant')
-    print(data['x_test'].shape)
-    print(data['y_test'].shape)
+        data['y_' + category] = np.expand_dims(data['y_' + category], axis = -1) 
+    current_year_num_nodes = data['x_test'].shape[2]
+    data['x_test'] = np.pad(data['x_test'], [(0,0), (0,0), (0, final_year_num_nodes - current_year_num_nodes), (0,0)], 'constant')
+    data['y_test'] = np.pad(data['y_test'], [(0,0), (0,0), (0, final_year_num_nodes - current_year_num_nodes), (0,0)], 'constant')
     data['test_loader'] = DataLoader(data['x_test'], data['y_test'], test_batch_size)
     return data
+
 
 
 def masked_mse(preds, labels, null_val=np.nan):
